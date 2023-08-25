@@ -1,0 +1,75 @@
+#!/bin/bash
+
+# Function to zip a file and remove the original
+zip_and_remove() {
+    local file="$1"
+    local zip_name="fc-$(basename "$file")"
+    local dir=$(dirname "$file")
+    zip -q "$dir/$zip_name.zip" "$file" && rm "$file"
+}
+
+# Function to delete old zipped files
+delete_old_zips() {
+    local timeout_hours=$1
+    find . -name "fc-*" -type f -mmin "+$((timeout_hours*60))" -delete
+}
+
+# Function to process files in the current directory and its subdirectories
+process_files_recursive() {
+    local dir="$1"
+    find "$dir" -type f -print0 | while IFS= read -r -d $'\0' file; do
+        process_file "$file"
+    done
+}
+
+# Function to process a single file
+process_file() {
+    local file="$1"
+
+    # Check if the file is a folder
+    if [ -d "$file" ]; then
+        # Traverse the folder recursively
+        process_files_recursive "$file"
+    else
+        # Check if the file is compressed
+        if file -b "$file" | grep -qE "compressed|archive"; then
+            # Move the compressed file and touch it to update timestamp
+            local dir=$(dirname "$file")
+            mv "$file" "$dir/fc-$(basename "$file")" && touch "$dir/fc-$(basename "$file")"
+        else
+            # Zip and remove the non-compressed file
+            zip_and_remove "$file"
+        fi
+    fi
+}
+
+# Default values for flags
+recursive=0
+timeout_hours=48
+
+# Parse command line arguments using a loop
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        -r)
+            recursive=1
+            ;;
+        -t)
+            if [ "$#" -gt 1 ]; then
+                timeout_hours="$2"
+                shift
+            else
+                echo "Error: Missing argument for -t option" >&2
+                exit 1
+            fi
+            ;;
+        *)
+            process_file "$1"
+            ;;
+    esac
+    shift
+done
+
+# Delete old zipped files
+delete_old_zips "$timeout_hours"
+
+exit 0

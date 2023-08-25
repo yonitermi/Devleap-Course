@@ -1,0 +1,4 @@
+("John doe,Jane McDun") > [('John doe', 'john.doe@company.com'), ('Jane McDun', 'jane.mcdun@company.com')]
+("John doe,Jane McDun, John Doe") > [('John doe', 'john.doe@company.com'), ('Jane McDun', 'jane.mcdun@company.com'), ('John Doe', 'john.doe2@company.com')]
+("Ben Tailor,Anna Ray-Cruz, Anna Raycruz") > [('Ben Tailor', 'ben.tailor@company.com'), ('Anna Ray-Cruz', 'anna.raycruz@company.com'), ('Anna Raycruz', 'anna.raycruz2@company.com')]
+

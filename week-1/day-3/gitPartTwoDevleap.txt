@@ -1,0 +1,63 @@
+1. Add 3 more commits to your repository (change & commit 3 times).
+   git add .
+   git commit -m "Add 1 more commits to your repository"
+   git add .
+   git commit -m "Add 2 more commits to your repository"
+   git add .
+   git commit -m "Add 3 more commits to your repository"
+
+2. List all your commits using git log. 
+	git log 
+
+3. Checkout an old commit. 
+	git checkout fc8fca48f1a89e5a8313f3816ccd9b574dc378b4
+
+4. git log 
+	the head is in the commit i checkdout (i cant see all the commits)
+   git log --all
+        the head is still in the commit i checkdout (i see all the commits)
+
+7. Where is the Main/Master branch? Can you see it?
+	git log --all (can see the master)
+	git log (cant see the master) need to command "git checkout master"
+	
+8. Are all the files there?   NO
+		
+9. What is their content? (their content is the content i comitted regardin to the commit ID)
+
+10.  git log 
+	the same when i made checkout fc8fca48f1a89e5a8313f3816ccd9b574dc378b4 
+     git log --all
+     the latest commit 794399d07e73912d432c66f04c332664fb452542
+     
+11. git tag version1.0
+	commit fc8fca48f1a89e5a8313f3816ccd9b574dc378b4 (HEAD, tag: version1.0)
+
+12. git checkout 65c646ef3ab0a1cb1402347ba5bfd93a047a3664
+
+13. git branch fix/1
+
+15. Where is HEAD? What state is it in? Where does it point?
+    git log : the head is pointing on the branch we created.
+
+16.Where is the Main/Master branch? Can you see it? 
+   we cant see the master branch -> need to git log --all
+
+17. Where is the tag you created earlier?
+    the commit i tagged is a commit before the commited branched - therefore we can see the tag
+
+18. git checkout master	 
+
+20. git log / git log --all 
+
+21. pointing to the master 
+
+22. the master branch is the latest commit , see him.
+
+23. yes
+
+24. the same content as earlier, didnt changed the content
+
+25. commit 794399d07e73912d432c66f04c332664fb452542 (HEAD -> master)
+
+

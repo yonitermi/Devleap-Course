@@ -1,0 +1,35 @@
+room_1 
+1. rm *.txt  (delete/move all the files with 'txt')
+2. du -ah | sort -h (Sort the remainig files by size, then look at the first letter of each filename(dont forget the hidden files))
+password - whatsupman
+
+room_2
+id white_rabbit
+grep '521' users_list - jackie
+
+
+
+room_3
+1. grep -cw "do" song - 20
+2. grep -cv "home" song - 39
+3. grep -cv "^$" song - 32
+
+to open tresure 1195723
+password - linuxisfun
+
+room_4
+linuxisstillfun
+password - crazyroom
+
+room_5
+fireofthephonix
+
+room_6
+key - jumanji
+password - linuxpro
+
+room_7
+password - linuxmagic
+
+room_8
+password - shutupanddance

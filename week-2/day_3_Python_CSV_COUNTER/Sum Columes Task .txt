@@ -1,0 +1,30 @@
+Your task is to write a program that parses a CSV file.
+
+What is CSV?
+CSV (Comma Separated Values) files is a plaintext format that stores rows of data, organized by columns (basicly a table).
+For example:
+"Name","Gender","Age"
+"John","M","12"
+"Sean","M","43"
+"Victoria","F","39"
+Note:
+- The first line contains column titles.
+- All values are in double-quotes and separated by commas.
+Write a program in Python called "sum-columns.py" where you pass a CSV file name and a column number as arguments. The program should return the sum of values in the column.
+
+Example usage:
+
+sum-columns expenses.csv 3
+Example output:
+
+The total 'amount' is 5,384.2
+The program will:
+
+Open the CSV file. 
+Go over all values in the column.
+Print the sum of all the values, formatted nicely (see example above).
+Make your code robust, so it will be able handle edge cases intelligently:
+- Negative values; decimal (float) values.
+- Columns with mixed values (integers and strings).
+- Incomplete columns (with partial data).
+A few CSV files with real data are attached. Please use them (and your own) to test.

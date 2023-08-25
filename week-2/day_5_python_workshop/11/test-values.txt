@@ -1,0 +1,3 @@
+(500,"database timeout") > {"statusCode":500, "statusText":"Internal Server Error","data":"database timeout"}
+(418) > {"statusCode": 418, "statusText": "I'm a teapot", "data": ""}
+(999, "unknown status") > {"statusCode": 999, "statusText": "Undocumented", "data": "unknown status"}

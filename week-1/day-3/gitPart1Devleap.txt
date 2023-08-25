@@ -1,0 +1,32 @@
+1. mkdir git-task-local
+   cd git-task-local
+   git init
+
+2. ls -a .git
+
+3. git status 
+   git status :  "Untracked"
+
+4. git add .
+   git status : "On branch master"
+
+5. git commit -m "first devleap commit"
+   git status : "On branch master. nothing to commit, working tree clean"	
+
+6. git status : "Changes not staged for commit"
+
+7. git add . 
+   git status : "Changes to be committed:
+
+8. git commit -m "seconed devleap commit"
+   git status : "nothing to commit, working tree clean"
+   
+9. nano secondfile.txt
+
+10.git add .
+   git commit -m "seconed file add"
+   
+11. git log
+	
+	
+

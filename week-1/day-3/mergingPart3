@@ -1,0 +1,15 @@
+1. git checkout master
+
+2. echo "hello" > file1.txt
+
+3. git add .
+   git commit -m "merging part"
+
+4. git checkout new-branch
+
+5. echo "Hi" > file1.txt
+   git add .
+   git commit -m "before merging with master"
+
+6. git merge master 
+   

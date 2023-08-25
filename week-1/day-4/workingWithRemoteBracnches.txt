@@ -1,0 +1,41 @@
+Part one
+1. forked
+
+2. <git clone https://github.com/yonitermi/branchtutorial.git>
+
+3. <git log --oneline --graph --all>
+
+4. <git branch>
+   <git branch -r>
+
+5. <git checkout h2>
+   <git branch -vv>
+
+
+Part Two
+
+1. <git checkout -b new-branch> (create and checkout)
+
+3. <echo "new-branch" > file3.txt>
+
+4. <git add . ; git commit -m "file3.txt new-branch">
+
+5. <git push origin new-branch>
+
+6. <git checkout master> 
+
+7. <echo "master branch file" > file4.txt>
+
+8. <git add . ; git commit -m "file4.txt master">
+
+9. <git push origin master>
+
+10. <git checkout -b second-new-branch>
+
+11. <git push origin temp-branch>
+
+12. <git branch -d temp-branch>
+
+13. <git branch -d temp-branch>
+
+14. <git push origin --delete temp-branch>
