@@ -1,0 +1,43 @@
+Part1 : 
+
+1. <docker pull mysql:5.6>
+2. <docker run -d --name mysql -e MYSQL_ROOT_PASSWORD=mysql mysql:5.6>
+    8dea7a7865f9abd59070372f507c13fa72f3eb307a99ca6724f7bb90044a10d9
+3. <docker exec -it mysql bash>
+4. <mysql -u root -p>
+5. <SELECT 1;>
+
+ SELECT 1;
++---+
+| 1 |
++---+
+| 1 |
++---+
+1 row in set (0.01 sec)
+
+Part 2:
+
+1. <docker stop mysql>
+2. <docker rm mysql>
+3. <docker run -d --name mysql -e MYSQL_ROOT_PASSWORD=mysql -p    	8877:3306 mysql:5.6>
+4. <docker exec -it mysql bash>
+5. <nc -zv localhost 8877>
+6. <mysql -u root -p>
+7. <SELECT 1;>
+
+Part 3:
+
+1. <docker run -d --name mysql -e MYSQL_ROOT_PASSWORD=passwd -p 8777:3306 -v "$(pwd)/mysql/data":/var/lib/mysql -v "$(pwd)/mysql/conf.d":/etc/mysql/conf.d -d mysql:5.7>
+2. <docker cp dump.sql mysql:/>
+3. <docker exec -it mysql mysql -uroot -ppasswd> 
+4. <SHOW DATABASES>
+5. <SELECT *  FROM mydb.SuperHeroes>
+6. <INSERT INTO SuperHeroes (username) VALUES ('Aquaman')>
+7. <SELECT *  FROM mydb.SuperHeroes> (still exsits)
+8. <docker stop mysql>
+9. <docker rm mysql>
+10.<docker run -d --name mysql -e MYSQL_ROOT_PASSWORD=passwd -p 8777:3306 -v "$(pwd)/mysql/data":/var/lib/mysql -v "$(pwd)/mysql/conf.d":/etc/mysql/conf.d -d mysql:5.7>
+11. <SELECT *  FROM mydb.SuperHeroes>
+
+
+
