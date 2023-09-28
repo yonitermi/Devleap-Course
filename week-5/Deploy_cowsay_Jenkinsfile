@@ -1,0 +1,126 @@
+pipeline {
+    agent any 
+
+    environment {
+        DOCKER_IMAGE = 'mbp_yoni'  // Replace with your Docker image name
+        ECR_REPO = "644435390668.dkr.ecr.eu-north-1.amazonaws.com"
+        AWS_REGION = "eu-north-1"
+    }
+
+    stages {
+        stage('Checkout Code') {
+            steps {
+                // Get the latest code from your Git repository
+                checkout scm
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    // Build a Docker image from your Dockerfile
+                    sh "docker build -t ${DOCKER_IMAGE} ."
+                }
+            }
+        }
+
+        stage('Run Sanity Test') {
+            steps {
+                script {
+                    // Run the container in detached mode
+                    sh "docker run -d --name test-container -p 8081:8080 ${DOCKER_IMAGE}"
+                    
+                    // Wait a bit for the application to start (adjust as needed)
+                    sh "sleep 10"
+
+                    // Perform the sanity check (here using curl to check a web service)
+                    sh "curl http://192.168.1.51:8081"
+                    
+                    // Stop and remove the container
+                    sh "docker stop test-container"
+                    sh "docker rm test-container"
+                }
+            }
+        }
+
+        stage('Push to ECR') {
+            steps {
+                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId : '86']]) {
+                    script {
+                        // Authenticate Docker with your ECR registry
+                        sh """
+                        docker run --rm \
+                        -e AWS_ACCESS_KEY_ID=\${AWS_ACCESS_KEY_ID} \
+                        -e AWS_SECRET_ACCESS_KEY=\${AWS_SECRET_ACCESS_KEY} \
+                        amazon/aws-cli ecr get-login-password --region ${AWS_REGION} | \
+                        docker login --username AWS --password-stdin ${ECR_REPO}
+                        """
+
+                        // Tag the image to match the ECR repository
+                        sh "docker tag ${DOCKER_IMAGE}:latest ${ECR_REPO}/${DOCKER_IMAGE}:latest"
+
+                        // Push the Docker image to your ECR repository
+                        sh "docker push ${ECR_REPO}/${DOCKER_IMAGE}:latest"
+                    }
+                }
+            }
+        }
+
+    
+        stage('Build on EC2') {
+            steps {
+                script {
+                    sshagent(['jenkins_ec2_mbp']) {
+                        sh """
+                        ssh -o StrictHostKeyChecking=no ec2-user@13.51.150.209 << 'ENDSSH'
+
+                        # Authenticate with ECR
+                        \$(aws ecr get-login --no-include-email --region ${AWS_REGION})
+
+                        # Pull Docker image from ECR
+                        docker pull ${ECR_REPO}/${DOCKER_IMAGE}:latest
+
+                        # Run new Docker container in detached mode and capture the container ID
+                        CONTAINER_ID=\$(docker run -d --rm -p 8080:8080 ${ECR_REPO}/${DOCKER_IMAGE}:latest)
+                        
+                        # Save container ID for later use
+                        echo \$CONTAINER_ID > container_id.txt
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('End-to-End Test') {
+            steps {
+                script {
+                    sh """
+                    sleep 20
+                    curl -f http://13.51.150.209:8080/
+                    """
+                }
+            }
+        }
+
+        stage('Cleanup') {
+            steps {
+                script {
+                    sshagent(['jenkins_ec2_mbp']) {
+                        sh """
+                        ssh -o StrictHostKeyChecking=no ec2-user@13.51.150.209 << 'ENDSSH'
+
+                        # Retrieve the container ID
+                        CONTAINER_ID=\$(cat container_id.txt)
+
+                        # Stop the container
+                        docker stop \$CONTAINER_ID
+                        """
+                    }
+                }
+            }
+        }
+
+    }
+
+}
+

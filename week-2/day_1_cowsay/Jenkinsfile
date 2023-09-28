@@ -1,0 +1,75 @@
+pipeline {
+    agent any 
+
+    environment {
+        DOCKER_IMAGE = 'cowsay-yoni'  // Replace with your Docker image name
+        REMOTE_HOST = 'ec2-51-20-9-108.eu-north-1.compute.amazonaws.com'
+        SSH_USER = 'ec2-user'
+    }
+
+    stages {
+        stage('Checkout Code') {
+            steps {
+                // Get the latest code from your Git repository
+                checkout scm
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    // Build a Docker image from your Dockerfile
+                    sh "docker build -t ${DOCKER_IMAGE} ."
+                }
+            }
+        }
+
+        stage('Run Sanity Test') {
+            steps {
+                script {
+                    // Run the container in detached mode
+                    sh "docker run -d --name test-container -p 8081:8080 ${DOCKER_IMAGE}"
+                    
+                    // Wait a bit for the application to start (adjust as needed)
+                    sh "sleep 10"
+
+                    // Perform the sanity check (here using curl to check a web service)
+                    sh "curl http://192.168.1.51:8081"
+                    
+                    // Stop and remove the container
+                    sh "docker stop test-container"
+                    sh "docker rm test-container"
+                }
+            }
+        }
+
+        stage('Push to ECR') {
+            steps {
+                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId : '86']]) {
+                    script {
+                        // Authenticate Docker with your ECR registry
+                        sh "aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin 644435390668.dkr.ecr.eu-north-1.amazonaws.com"
+
+                        // Tag the image to match the ECR repository
+                        sh "docker tag cowsay-yoni:latest 644435390668.dkr.ecr.eu-north-1.amazonaws.com/cowsay-yoni:latest"
+
+                        // Push the Docker image to your ECR repository
+                        sh "docker push 644435390668.dkr.ecr.eu-north-1.amazonaws.com/cowsay-yoni:latest"
+                    }
+                }
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                withCredentials([sshUserPrivateKey(credentialsId: '88', keyFileVariable: 'SSH_KEY')]) {
+                    script {
+                        def sshCommand = "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${SSH_USER}@${REMOTE_HOST} "
+                        sh "${sshCommand} 'docker run --name cowsay-yoni -d -p 8081:8080 644435390668.dkr.ecr.eu-north-1.amazonaws.com/cowsay-yoni:latest'"
+                    }
+                }
+            }   
+        }
+    }
+
+}

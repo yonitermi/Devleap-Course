@@ -1,0 +1,174 @@
+pipeline {
+    agent any 
+
+    environment {
+        DOCKER_IMAGE = 'mbp_yoni'  // Replace with your Docker image name
+        ECR_REPO = "644435390668.dkr.ecr.eu-north-1.amazonaws.com"
+        AWS_REGION = "eu-north-1"
+        EXPOSED_PORT = "8080"
+    }
+
+    stages {
+        stage('Checkout Code') {
+            steps {
+                // Get the latest code from your Git repository
+                checkout scm
+            }
+        }
+
+        stage('Set Environment Variables') {
+            when {
+                expression {
+                    return env.BRANCH_NAME == 'main' || env.BRANCH_NAME == 'staging' 
+                }
+            }
+            steps {
+                script {
+                    if (env.BRANCH_NAME == 'main') {
+                        env.EXPOSED_PORT = "80"
+                    } else if (env.BRANCH_NAME == 'staging') {
+                        env.EXPOSED_PORT = "3000"
+                    } 
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            when {
+                expression {
+                    return env.BRANCH_NAME == 'main' || env.BRANCH_NAME == 'staging' || env.BRANCH_NAME.startsWith('feature/')
+                }
+            }
+            steps {
+                script {
+                    // Build a Docker image from your Dockerfile
+                    sh "docker build -t ${DOCKER_IMAGE} ."
+                }
+            }
+        }
+
+        stage('Run Sanity Test') {
+            when {
+                expression {
+                    return env.BRANCH_NAME == 'main' || env.BRANCH_NAME == 'staging' || env.BRANCH_NAME.startsWith('feature/')
+                }
+            }
+            steps {
+                script {
+                    // Dynamic port and container name assignment based on branch
+                    def sanityTestPort
+                    def containerName
+                    
+                    if (env.BRANCH_NAME == 'main') {
+                        sanityTestPort = '8081'
+                        containerName = 'main_container'
+                    } else if (env.BRANCH_NAME == 'staging') {
+                        sanityTestPort = '8082'
+                        containerName = 'staging_container'
+                    } else if (env.BRANCH_NAME.startsWith('feature/')) {
+                        sanityTestPort = '8083'  // or any other port for feature branches
+                        containerName = 'feature_container'
+                    }
+                    
+                    // Run the container in detached mode
+                    sh "docker run -d --name ${containerName} -p ${sanityTestPort}:8080 ${DOCKER_IMAGE}"
+                    
+                    // Wait a bit for the application to start (adjust as needed)
+                    sh "sleep 10"
+
+                    // Perform the sanity check (here using curl to check a web service)
+                    sh "curl http://192.168.1.51:${sanityTestPort}"
+                    
+                    // Stop and remove the container
+                    sh "docker stop ${containerName}"
+                    sh "docker rm ${containerName}"
+                }
+            }
+        }
+
+
+
+        stage('Push to ECR') {
+            when {
+                expression {
+                    return env.BRANCH_NAME == 'main' || env.BRANCH_NAME == 'staging'
+                }
+            }
+            steps {
+                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId : '86']]) {
+                    script {
+                        // Authenticate Docker with your ECR registry
+                        sh """
+                        docker run --rm \
+                        -e AWS_ACCESS_KEY_ID=\${AWS_ACCESS_KEY_ID} \
+                        -e AWS_SECRET_ACCESS_KEY=\${AWS_SECRET_ACCESS_KEY} \
+                        amazon/aws-cli ecr get-login-password --region ${AWS_REGION} | \
+                        docker login --username AWS --password-stdin ${ECR_REPO}
+                        """
+
+                        // Tag the image to match the ECR repository
+                        sh "docker tag ${DOCKER_IMAGE}:latest ${ECR_REPO}/${DOCKER_IMAGE}:latest"
+
+                        // Push the Docker image to your ECR repository
+                        sh "docker push ${ECR_REPO}/${DOCKER_IMAGE}:latest"
+                    }
+                }
+            }
+        }
+
+        stage('Build on EC2') {
+            when {
+                expression {
+                    return env.BRANCH_NAME == 'main' || env.BRANCH_NAME == 'staging'
+                }
+            }
+            steps {
+                script {
+                    def dockerPort = (env.BRANCH_NAME == 'main') ? '80' : '3000'
+                    def containerName = (env.BRANCH_NAME == 'main') ? 'main_container' : 'staging_container'
+                    def EXPOSED_PORT = '8080'
+
+                    sshagent(['jenkins_ec2_mbp']) {
+                        sh """
+                        ssh -o StrictHostKeyChecking=no ec2-user@13.51.150.209 << 'ENDSSH'
+                        
+                        # Authenticate with ECR
+                        \$(aws ecr get-login --no-include-email --region ${AWS_REGION})
+                        
+                        # Pull Docker image from ECR
+                        docker pull ${ECR_REPO}/${DOCKER_IMAGE}:latest
+
+                        # Stop any existing containers with the same name (if any)
+                        docker stop ${containerName} || true
+                        docker rm ${containerName} || true
+                        
+                        # Run new Docker container in detached mode and capture the container ID
+                        docker run -d --name ${containerName} -p ${dockerPort}:${EXPOSED_PORT} ${ECR_REPO}/${DOCKER_IMAGE}:latest
+                        """
+                    }
+                }
+            }
+        }
+
+
+        stage('End-to-End Test') {
+            when {
+                expression {
+                    return env.BRANCH_NAME == 'main' || env.BRANCH_NAME == 'staging'
+                }
+            }
+            steps {
+                script {
+                    def e2ePort = (env.BRANCH_NAME == 'main') ? '80' : '3000'
+                    
+                    sh """
+                    sleep 10
+                    curl -f http://13.51.150.209:${e2ePort}/
+                    """
+                }
+            }
+        }
+
+    }
+
+}
